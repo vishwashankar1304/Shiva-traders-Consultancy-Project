@@ -483,6 +483,12 @@ export const getUsers = (): User[] => {
   return users;
 };
 
+// Get user by id
+export const getUserById = (id: string): User | undefined => {
+  const users = getUsers();
+  return users.find(user => user.id === id);
+};
+
 // Get stats for admin dashboard
 export const getAdminStats = () => {
   const users = getUsers();

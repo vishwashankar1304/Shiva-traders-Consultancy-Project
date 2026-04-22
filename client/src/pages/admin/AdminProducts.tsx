@@ -43,6 +43,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { set } from "date-fns";
 
 const CATEGORIES = [
   'Lighting',
@@ -67,7 +68,7 @@ const AdminProducts = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
-  
+  const [isUpdated, setIsUpdated] = useState(false);
   // Form state
   const [productName, setProductName] = useState("");
   const [productDescription, setProductDescription] = useState("");
@@ -98,6 +99,15 @@ const AdminProducts = () => {
   useEffect(() => {
     loadProducts();
   }, []);
+
+  
+  useEffect(() => {
+    if(isUpdated === true)
+    {loadProducts();
+      setIsUpdated(false);
+    }
+  }, [isUpdated,setIsUpdated]);
+
 
   const filteredProducts = products.filter(product => 
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -204,7 +214,7 @@ const AdminProducts = () => {
       
       setIsEditDialogOpen(false);
       resetForm();
-      loadProducts();
+      setIsUpdated(true);
     } catch (error) {
       toast({
         title: "Error",

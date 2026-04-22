@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +23,43 @@ interface AddressFormData {
 
 type PaymentMethod = "razorpay" | "cash_on_delivery";
 
+// Pincode to city/state mapping (sample Indian pincodes)
+const PINCODE_MAPPING: Record<string, { city: string; state: string }> = {
+  "110001": { city: "New Delhi", state: "Delhi" },
+  "110002": { city: "New Delhi", state: "Delhi" },
+  "110003": { city: "New Delhi", state: "Delhi" },
+  "110004": { city: "New Delhi", state: "Delhi" },
+  "110005": { city: "New Delhi", state: "Delhi" },
+  "400001": { city: "Mumbai", state: "Maharashtra" },
+  "400002": { city: "Mumbai", state: "Maharashtra" },
+  "400003": { city: "Mumbai", state: "Maharashtra" },
+  "400004": { city: "Mumbai", state: "Maharashtra" },
+  "400005": { city: "Mumbai", state: "Maharashtra" },
+  "560001": { city: "Bangalore", state: "Karnataka" },
+  "560002": { city: "Bangalore", state: "Karnataka" },
+  "560003": { city: "Bangalore", state: "Karnataka" },
+  "560004": { city: "Bangalore", state: "Karnataka" },
+  "560005": { city: "Bangalore", state: "Karnataka" },
+  "700001": { city: "Kolkata", state: "West Bengal" },
+  "700002": { city: "Kolkata", state: "West Bengal" },
+  "700003": { city: "Kolkata", state: "West Bengal" },
+  "500001": { city: "Hyderabad", state: "Telangana" },
+  "500002": { city: "Hyderabad", state: "Telangana" },
+  "500003": { city: "Hyderabad", state: "Telangana" },
+  "600001": { city: "Chennai", state: "Tamil Nadu" },
+  "600002": { city: "Chennai", state: "Tamil Nadu" },
+  "600003": { city: "Chennai", state: "Tamil Nadu" },
+  "201301": { city: "Noida", state: "Uttar Pradesh" },
+  "201302": { city: "Noida", state: "Uttar Pradesh" },
+  "201303": { city: "Noida", state: "Uttar Pradesh" },
+  "380001": { city: "Ahmedabad", state: "Gujarat" },
+  "380002": { city: "Ahmedabad", state: "Gujarat" },
+  "380003": { city: "Ahmedabad", state: "Gujarat" },
+  "122001": { city: "Gurugram", state: "Haryana" },
+  "122002": { city: "Gurugram", state: "Haryana" },
+  "122003": { city: "Gurugram", state: "Haryana" },
+};
+
 const CheckoutPage = () => {
   const { cart, checkout } = useCart();
   const { user } = useAuth();
@@ -42,10 +79,35 @@ const CheckoutPage = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setAddressData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    
+    // If pincode is being updated, auto-fill city and state
+    if (name === "pincode") {
+      setAddressData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+      
+      // Auto-fill city and state if pincode exists in mapping
+      if (value.length === 6) {
+        const locationData = PINCODE_MAPPING[value];
+        if (locationData) {
+          setAddressData((prev) => ({
+            ...prev,
+            city: locationData.city,
+            state: locationData.state,
+          }));
+          toast({
+            title: "Location Found",
+            description: `${locationData.city}, ${locationData.state}`,
+          });
+        }
+      }
+    } else {
+      setAddressData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   const validateForm = () => {
@@ -115,179 +177,239 @@ const CheckoutPage = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <Button
-        variant="ghost"
-        onClick={() => navigate("/cart")}
-        className="mb-6"
-      >
-        <ArrowLeft size={16} className="mr-2" /> Back to Cart
-      </Button>
-      
-      <h1 className="text-3xl font-bold mb-8">Checkout</h1>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Address and Payment Form */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Shipping Address */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Shipping Address</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name</Label>
-                  <Input
-                    id="fullName"
-                    name="fullName"
-                    placeholder="Enter full name"
-                    value={addressData.fullName}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    placeholder="10-digit phone number"
-                    value={addressData.phone}
-                    onChange={handleInputChange}
-                  />
-                </div>
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 py-8">
+      <div className="container mx-auto px-4">
+        {/* Header */}
+        <div className="mb-8">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/cart")}
+            className="mb-4 text-brand-blue hover:bg-blue-50 font-semibold"
+          >
+            <ArrowLeft size={18} className="mr-2" /> Back to Cart
+          </Button>
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 animate-slideInLeft">Secure Checkout</h1>
+          <p className="text-gray-600 text-lg mt-2 animate-slideInRight">Complete your purchase safely and securely</p>
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Address and Payment Form */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Progress indicator */}
+            <div className="flex items-center gap-4 mb-8">
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-brand-blue to-indigo-600 text-white font-bold">1</div>
+              <div className="flex-1 h-1 bg-gradient-to-r from-brand-blue to-indigo-600"></div>
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-brand-blue to-indigo-600 text-white font-bold">2</div>
+              <div className="flex-1 h-1 bg-gray-200"></div>
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-300 text-white font-bold">3</div>
+            </div>
+
+            {/* Shipping Address */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 animate-fadeInUp">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="text-2xl">📍</div>
+                <h2 className="text-2xl font-bold text-gray-900">Shipping Address</h2>
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="street">Street Address</Label>
-                <Input
-                  id="street"
-                  name="street"
-                  placeholder="Enter street address"
-                  value={addressData.street}
-                  onChange={handleInputChange}
-                />
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName" className="font-semibold text-gray-700">Full Name *</Label>
+                    <Input
+                      id="fullName"
+                      name="fullName"
+                      placeholder="John Doe"
+                      value={addressData.fullName}
+                      onChange={handleInputChange}
+                      className="py-3 text-base border-2 border-gray-200 hover:border-brand-blue focus:border-brand-blue transition-colors rounded-lg"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone" className="font-semibold text-gray-700">Phone Number *</Label>
+                    <Input
+                      id="phone"
+                      name="phone"
+                      placeholder="9876543210"
+                      value={addressData.phone}
+                      onChange={handleInputChange}
+                      className="py-3 text-base border-2 border-gray-200 hover:border-brand-blue focus:border-brand-blue transition-colors rounded-lg"
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="street" className="font-semibold text-gray-700">Street Address *</Label>
+                  <Input
+                    id="street"
+                    name="street"
+                    placeholder="123 Main Street, Apartment 4B"
+                    value={addressData.street}
+                    onChange={handleInputChange}
+                    className="py-3 text-base border-2 border-gray-200 hover:border-brand-blue focus:border-brand-blue transition-colors rounded-lg"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="city" className="font-semibold text-gray-700">City *</Label>
+                    <Input
+                      id="city"
+                      name="city"
+                      placeholder="New York"
+                      value={addressData.city}
+                      onChange={handleInputChange}
+                      className="py-3 text-base border-2 border-gray-200 hover:border-brand-blue focus:border-brand-blue transition-colors rounded-lg"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="state" className="font-semibold text-gray-700">State *</Label>
+                    <Input
+                      id="state"
+                      name="state"
+                      placeholder="New York"
+                      value={addressData.state}
+                      onChange={handleInputChange}
+                      className="py-3 text-base border-2 border-gray-200 hover:border-brand-blue focus:border-brand-blue transition-colors rounded-lg"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="pincode" className="font-semibold text-gray-700">Pincode *</Label>
+                    <Input
+                      id="pincode"
+                      name="pincode"
+                      placeholder="123456"
+                      value={addressData.pincode}
+                      onChange={handleInputChange}
+                      className="py-3 text-base border-2 border-gray-200 hover:border-brand-blue focus:border-brand-blue transition-colors rounded-lg"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Payment Method */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 animate-fadeInUp" style={{ animationDelay: "0.1s" }}>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="text-2xl">💳</div>
+                <h2 className="text-2xl font-bold text-gray-900">Payment Method</h2>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="city">City</Label>
-                  <Input
-                    id="city"
-                    name="city"
-                    placeholder="Enter city"
-                    value={addressData.city}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="state">State</Label>
-                  <Input
-                    id="state"
-                    name="state"
-                    placeholder="Enter state"
-                    value={addressData.state}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="pincode">Pincode</Label>
-                  <Input
-                    id="pincode"
-                    name="pincode"
-                    placeholder="Enter 6-digit pincode"
-                    value={addressData.pincode}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Payment Method */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Payment Method</CardTitle>
-            </CardHeader>
-            <CardContent>
               <RadioGroup
                 value={paymentMethod}
                 onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}
-                className="space-y-4"
+                className="space-y-3"
               >
-             
-                
-                <div className="flex items-center space-x-3 border rounded-md p-3 cursor-pointer hover:bg-gray-50">
-                  <RadioGroupItem value="cash_on_delivery" id="cod" />
-                  <Label htmlFor="cod" className="flex items-center cursor-pointer">
-                    <IndianRupee className="mr-2 h-5 w-5 text-green-500" />
+                <div className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all duration-300 ${
+                  paymentMethod === "razorpay" 
+                    ? "border-brand-blue bg-blue-50" 
+                    : "border-gray-200 hover:border-gray-300"
+                }`}>
+                  <RadioGroupItem value="razorpay" id="razorpay" className="w-5 h-5" />
+                  <Label htmlFor="razorpay" className="flex items-center cursor-pointer flex-1 ml-3">
+                    <CreditCard className="mr-3 h-6 w-6 text-brand-blue" />
                     <div>
-                      <div className="font-medium">Cash on Delivery</div>
+                      <div className="font-bold text-gray-900">Razorpay Payment</div>
+                      <div className="text-sm text-gray-500">Secure online payment gateway</div>
+                    </div>
+                  </Label>
+                </div>
+
+                <div className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all duration-300 ${
+                  paymentMethod === "cash_on_delivery" 
+                    ? "border-green-500 bg-green-50" 
+                    : "border-gray-200 hover:border-gray-300"
+                }`}>
+                  <RadioGroupItem value="cash_on_delivery" id="cod" className="w-5 h-5" />
+                  <Label htmlFor="cod" className="flex items-center cursor-pointer flex-1 ml-3">
+                    <IndianRupee className="mr-3 h-6 w-6 text-green-500" />
+                    <div>
+                      <div className="font-bold text-gray-900">Cash on Delivery</div>
                       <div className="text-sm text-gray-500">Pay when your order arrives</div>
                     </div>
                   </Label>
                 </div>
               </RadioGroup>
-            </CardContent>
-          </Card>
-        </div>
-        
-        {/* Order Summary */}
-        <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Order Summary</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
+            </div>
+          </div>
+          
+          {/* Order Summary Sidebar */}
+          <div>
+            <div className="bg-gradient-to-br from-brand-blue to-indigo-600 text-white rounded-xl shadow-lg p-8 sticky top-24 animate-slideInRight">
+              <h2 className="text-2xl font-bold mb-6">Order Summary</h2>
+              
+              <div className="space-y-3 max-h-64 overflow-y-auto mb-6 pb-6 border-b-2 border-blue-400">
                 {cart.items.map((item) => (
-                  <div key={item.product.id} className="flex justify-between text-sm">
-                    <span>{item.product.name} × {item.quantity}</span>
-                    <span>{formatPrice(item.product.price * item.quantity)}</span>
+                  <div key={item.product.id} className="flex justify-between text-sm text-blue-100">
+                    <span className="flex-1">{item.product.name}</span>
+                    <span className="ml-2">×{item.quantity}</span>
+                    <span className="ml-2 font-semibold text-right min-w-fit">{formatPrice(item.product.price * item.quantity)}</span>
                   </div>
                 ))}
               </div>
               
-              <Separator />
-              
-              <div className="space-y-1">
-                <div className="flex justify-between">
-                  <span>Subtotal</span>
-                  <span>{formatPrice(cart.totalPrice)}</span>
+              <div className="space-y-4 mb-6">
+                <div className="flex justify-between text-blue-100">
+                  <span className="font-medium">Subtotal:</span>
+                  <span className="font-bold text-lg">{formatPrice(cart.totalPrice)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Shipping</span>
-                  <span>Free</span>
+                <div className="flex justify-between text-blue-100">
+                  <span className="font-medium">Shipping:</span>
+                  <span className="font-bold text-lg text-brand-yellow">FREE</span>
+                </div>
+                <div className="flex justify-between text-blue-100">
+                  <span className="font-medium">Tax:</span>
+                  <span className="font-bold text-lg">₹0</span>
                 </div>
               </div>
-              
-              <Separator />
-              
-              <div className="flex justify-between font-bold text-lg">
-                <span>Total</span>
-                <span className="text-brand-blue">{formatPrice(cart.totalPrice)}</span>
+
+              <div className="pt-6 border-t-2 border-blue-400 mb-8">
+                <div className="flex justify-between items-center">
+                  <span className="text-xl font-bold">Total:</span>
+                  <span className="text-3xl font-bold bg-gradient-to-r from-brand-yellow to-orange-300 bg-clip-text text-transparent">
+                    {formatPrice(cart.totalPrice)}
+                  </span>
+                </div>
               </div>
-            </CardContent>
-            <CardFooter>
+
               <Button 
-                className="w-full" 
+                className="w-full bg-gradient-to-r from-brand-yellow to-orange-300 hover:from-yellow-400 hover:to-orange-400 text-gray-900 font-bold text-lg py-6 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300" 
                 size="lg"
                 onClick={handlePlaceOrder}
                 disabled={isProcessing}
               >
-                {isProcessing ? "Processing..." : "Place Order"}
+                {isProcessing ? (
+                  <>
+                    <div className="mr-2 w-4 h-4 border-2 border-gray-900 border-t-transparent rounded-full animate-spin"></div>
+                    Processing...
+                  </>
+                ) : (
+                  "Place Order Now"
+                )}
               </Button>
-            </CardFooter>
-          </Card>
-          
-          <div className="mt-4 space-y-3">
-            <div className="flex items-center text-gray-600 text-sm">
-              <div className="mr-2">🔒</div>
-              Secure Checkout
-            </div>
-            <div className="flex items-center text-gray-600 text-sm">
-              <div className="mr-2">🚚</div>
-              Free Shipping Over ₹1000
+              
+              <div className="mt-8 space-y-4 text-sm">
+                <div className="flex items-start gap-2">
+                  <span className="text-xl">🔒</span>
+                  <div>
+                    <div className="font-bold">Secure & Encrypted</div>
+                    <div className="text-blue-100 text-xs">Your data is protected</div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-xl">✓</span>
+                  <div>
+                    <div className="font-bold">Easy Returns</div>
+                    <div className="text-blue-100 text-xs">30-day money-back guarantee</div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-xl">📦</span>
+                  <div>
+                    <div className="font-bold">Free Shipping</div>
+                    <div className="text-blue-100 text-xs">On all orders</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

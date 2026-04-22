@@ -27,7 +27,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { getOrders, getOrderById, updateOrderStatus } from "@/utils/dataUtils";
+import { getOrders, getOrderById, updateOrderStatus, getUserById } from "@/utils/dataUtils";
 import { Order, OrderStatus } from "@/types";
 import { formatPrice, formatOrderId, formatDate } from "@/utils/formatters";
 import { Search, Eye } from "lucide-react";
@@ -175,30 +175,38 @@ const AdminOrders = () => {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredOrders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell className="font-medium">
-                    {formatOrderId(order.id)}
-                  </TableCell>
-                  <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>
-                  <TableCell>{order.userId}</TableCell>
-                  <TableCell>{formatPrice(order.totalPrice)}</TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusBadgeVariant(order.status)}>
-                      {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => viewOrderDetails(order.id)}
-                    >
-                      <Eye size={16} className="mr-1" /> View
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
+              filteredOrders.map((order) => {
+                const user = getUserById(order.userId);
+                return (
+                  <TableRow key={order.id}>
+                    <TableCell className="font-medium">
+                      {formatOrderId(order.id)}
+                    </TableCell>
+                    <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{user?.name || 'Unknown'}</span>
+                        <span className="text-sm text-gray-500">{user?.email || order.userId}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{formatPrice(order.totalPrice)}</TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusBadgeVariant(order.status)}>
+                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => viewOrderDetails(order.id)}
+                      >
+                        <Eye size={16} className="mr-1" /> View
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
