@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://consultancy-server-gilt.vercel.app/api';
+const API_BASE_URL = 'https://consultancy-server-git-main-vishwa-ss-projects-06cd2bff.vercel.app/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
